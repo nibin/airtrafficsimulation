@@ -1,0 +1,18 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="ATS Test Suite" verbose="1">
+
+
+	<test name="ATS Unit Tests">
+		<packages>
+			<package name="test.nvarghese.ats.*" />
+		</packages>
+	</test>
+	
+	<test name="ATS Integration Tests">
+		<packages>
+			<package name="integration.ats.*" />
+		</packages>
+	</test>
+
+</suite>

@@ -5,14 +5,19 @@ import java.util.Scanner;
 import com.nvarghese.ats.params.Location;
 
 public class AtsMain {
-	
-	private static Location AIRPORT_LOCATION = Location.BANGALORE;
+
+	public static Location BASE_AIRPORT_LOCATION = Location.BANGALORE;
+	private static AtsManager atsManager = null;
 
 	public static void main(String[] args) {
-		
-		
-		
-		
+
+		atsManager = new AtsManager();
+		atsManager.initializeAirport();
+
+	}
+
+	private static void readInputs() {
+
 		System.out.print("Enter something here : ");
 
 		String sWhatever;
