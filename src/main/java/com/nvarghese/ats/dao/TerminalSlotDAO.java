@@ -42,4 +42,14 @@ public class TerminalSlotDAO {
 
 	}
 
+	public static void freeTerminalSlot(int terminalSlotId) {
+
+		TerminalSlot slot = getTerminalSlot(terminalSlotId);
+		if (slot != null) {
+			slot.setFlightUniqueId(TerminalSlot.FLIGHT_UNASSIGNED);
+			save(slot);
+		}
+
+	}
+
 }

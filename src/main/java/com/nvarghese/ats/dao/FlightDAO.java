@@ -17,20 +17,42 @@ public class FlightDAO {
 		DataStore.getInstance().getFlightMap().put(flight.getUniqueId(), flight);
 
 		if (flight.isDeparting()) {
-			DataStore.getInstance().getDepartureTreeMap()
-					.put(flight.getDepartureTime().getResolvedMins(), flight.getUniqueId());
 
-			boolean isKeyPresent = DataStore.getInstance().getDepartureDestinationMap()
-					.containsKey(flight.getDestination().getName());
+			boolean isKeyPresent = DataStore.getInstance().getDepartureTreeMap()
+					.containsKey(flight.getDepartureTime().getResolvedMins());
 			if (isKeyPresent) {
-				DataStore.getInstance().getDepartureDestinationMap().get(flight.getDestination().getName())
+				DataStore.getInstance().getDepartureTreeMap().get(flight.getDepartureTime().getResolvedMins())
 						.add(flight.getUniqueId());
 			} else {
 				HashSet<Integer> flightIds = new HashSet<Integer>();
 				flightIds.add(flight.getUniqueId());
-				DataStore.getInstance().getDepartureDestinationMap().put(flight.getDestination().getName(), flightIds);
+				DataStore.getInstance().getDepartureTreeMap()
+						.put(flight.getDepartureTime().getResolvedMins(), flightIds);
+			}
+
+			isKeyPresent = DataStore.getInstance().getDepartureDestinationMap()
+					.containsKey(flight.getDestination().getSimpleName());
+			if (isKeyPresent) {
+				DataStore.getInstance().getDepartureDestinationMap().get(flight.getDestination().getSimpleName())
+						.add(flight.getUniqueId());
+			} else {
+				HashSet<Integer> flightIds = new HashSet<Integer>();
+				flightIds.add(flight.getUniqueId());
+				DataStore.getInstance().getDepartureDestinationMap()
+						.put(flight.getDestination().getSimpleName(), flightIds);
 			}
 		}
+	}
+
+	public static void removeDepatureTimeMapping(Flight flight) {
+
+		DataStore.getInstance().getDepartureTreeMap().remove(flight.getDepartureTime().getResolvedMins());
+	}
+
+	public static Flight getFlight(int flightId) {
+
+		return DataStore.getInstance().getFlightMap().get(flightId);
+
 	}
 
 	public static List<Flight> getAllFlights() {
@@ -41,10 +63,15 @@ public class FlightDAO {
 
 	public static List<Flight> getAllFlightReadyForDeparture(Time startTime, Time endTime) {
 
-		NavigableMap<Integer, Integer> selectedFlights = DataStore.getInstance().getDepartureTreeMap()
+		NavigableMap<Integer, HashSet<Integer>> selectedFlights = DataStore.getInstance().getDepartureTreeMap()
 				.subMap(startTime.getResolvedMins(), true, endTime.getResolvedMins(), true);
 
-		List<Flight> flights = getFlights(selectedFlights.keySet());
+		HashSet<Integer> flightIds = new HashSet<Integer>();
+		for(HashSet<Integer> s: selectedFlights.values()) {
+			flightIds.addAll(s);
+		}
+		
+		List<Flight> flights = getFlights(flightIds);
 		return flights;
 
 	}
@@ -76,22 +103,35 @@ public class FlightDAO {
 	}
 
 	public static List<Flight> getAllFlightReadyForDeparture(Time startTime, Time endTime, String location) {
-
-		NavigableMap<Integer, Integer> flightsTimeBased = DataStore.getInstance().getDepartureTreeMap()
+		
+		NavigableMap<Integer, HashSet<Integer>> flightsTimeBased = DataStore.getInstance().getDepartureTreeMap()
 				.subMap(startTime.getResolvedMins(), true, endTime.getResolvedMins(), true);
 
-		HashSet<Integer> flightLocBased = DataStore.getInstance().getDepartureDestinationMap().get(location);
+		HashSet<Integer> flightLocBasedSet = DataStore.getInstance().getDepartureDestinationMap().get(location);
+		
+		HashSet<Integer> flightTimeBasedSet = new HashSet<Integer>();
+		for(HashSet<Integer> s: flightsTimeBased.values()) {
+			flightTimeBasedSet.addAll(s);
+		}		
 
 		HashSet<Integer> targetSet = new HashSet<Integer>();
-		targetSet.addAll(flightsTimeBased.keySet());
-
-		if (flightLocBased != null) {
-			targetSet.addAll(flightLocBased);
+		if (flightsTimeBased.size() > 0 && flightLocBasedSet != null) {
+			targetSet.addAll(flightTimeBasedSet);
+			targetSet.retainAll(flightLocBasedSet);
 		}
 
 		List<Flight> flights = getFlights(targetSet);
 
 		return flights;
+
+	}
+
+	public static void delete(int flightUniqueId) {
+
+		Flight flight = DataStore.getInstance().getFlightMap().remove(flightUniqueId);
+		DataStore.getInstance().getDepartureTreeMap().remove(flight.getDepartureTime().getResolvedMins());
+		DataStore.getInstance().getDepartureDestinationMap().get(flight.getDestination().getSimpleName())
+				.remove(flight.getUniqueId());
 
 	}
 

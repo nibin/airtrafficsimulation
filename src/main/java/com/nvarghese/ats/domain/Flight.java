@@ -15,6 +15,7 @@ public class Flight {
 	private Time arrivalTime;
 	private Time departureTime;
 	private int terminalSlotUniqueId;
+	private int runwayUniqueId;
 	private boolean departing;
 	private boolean arriving;
 
@@ -121,6 +122,18 @@ public class Flight {
 	public void setArriving(boolean arriving) {
 
 		this.arriving = arriving;
+	}
+
+	
+	public int getRunwayUniqueId() {
+	
+		return runwayUniqueId;
+	}
+
+	
+	public void setRunwayUniqueId(int runwayUniqueId) {
+	
+		this.runwayUniqueId = runwayUniqueId;
 	}
 
 }

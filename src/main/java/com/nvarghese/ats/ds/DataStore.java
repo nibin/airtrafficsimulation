@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.nvarghese.ats.domain.Flight;
+import com.nvarghese.ats.domain.Runway;
 import com.nvarghese.ats.domain.Terminal;
 import com.nvarghese.ats.domain.TerminalSlot;
 
@@ -16,7 +17,9 @@ public class DataStore {
 	private final Map<Integer, Flight> flightMap = new HashMap<Integer, Flight>();
 
 	private final Map<String, HashSet<Integer>> departureDestinationMap = new HashMap<String, HashSet<Integer>>();
-	private final TreeMap<Integer, Integer> departureTreeMap = new TreeMap<Integer, Integer>();
+	private final TreeMap<Integer, HashSet<Integer>> departureTreeMap = new TreeMap<Integer, HashSet<Integer>>();
+	
+	private final Map<Integer, Runway> runwayMap = new HashMap<Integer, Runway>();
 
 	private static final DataStore instance = new DataStore();
 
@@ -45,7 +48,7 @@ public class DataStore {
 		return flightMap;
 	}
 
-	public TreeMap<Integer, Integer> getDepartureTreeMap() {
+	public TreeMap<Integer, HashSet<Integer>> getDepartureTreeMap() {
 
 		return departureTreeMap;
 	}
@@ -53,6 +56,12 @@ public class DataStore {
 	public Map<String, HashSet<Integer>> getDepartureDestinationMap() {
 
 		return departureDestinationMap;
+	}
+
+	
+	public Map<Integer, Runway> getRunwayMap() {
+	
+		return runwayMap;
 	}
 
 }

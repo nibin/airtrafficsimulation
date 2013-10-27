@@ -27,7 +27,7 @@ public enum Location {
 		this.name = name;
 	}
 
-	public String getName() {
+	public String getSimpleName() {
 
 		return name;
 	}
@@ -35,7 +35,7 @@ public enum Location {
 	public static Location getLocation(String value) {
 
 		for (Location loc : Location.values()) {
-			if (loc.getName().equalsIgnoreCase(value)) {
+			if (loc.getSimpleName().equalsIgnoreCase(value)) {
 				return loc;
 			}
 		}
@@ -48,7 +48,7 @@ public enum Location {
 		List<Location> locs = new ArrayList<Location>();
 
 		for (Location loc : Location.values()) {
-			if (loc != excludedLocation) {
+			if (loc != excludedLocation && loc != Location.NONE) {
 				locs.add(loc);
 			}
 		}
