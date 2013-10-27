@@ -38,6 +38,17 @@ public class TimeUtils {
 		Time newTime = new Time(time.getHour(), time.getMins());
 		return newTime;
 	}
+	
+	public static Time getTime(int mins) {
+		
+		int newHour = mins / 60;
+		int newMins = mins % 60;
+
+		Time nTime = new Time(newHour, newMins);
+		
+		return nTime;
+
+	}
 
 	public static Time parseTime(String timeStr) {
 

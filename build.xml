@@ -1,0 +1,297 @@
+<project name="ats" basedir="." default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+	<description>
+		Build file for Air Traffic Simulation
+	</description>
+
+	<!--
+		Global properties
+	-->
+	<property name="ats.root" location="${basedir}" />
+	<property file="build.properties" />
+	<property name="dist.dir" location="dist" />
+	<property name="lib.dir" location="${ats.root}/lib" />
+
+	<delete dir="${testng.output.dir}" />
+
+	<property name="src.dir" value="src/main/java" />
+	<property name="test.dir" value="src/test/java" />
+	<property name="integration.dir" value="src/integration/java" />
+	<property name="src.resources.dir" value="src/main/resources" />
+	<property name="test.resources.dir" value="src/test/resources" />
+	<property name="integration.resources.dir" value="src/integration/resources" />
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: init-properties 
+	 - - - - - - - - - - - - - - - - - -->
+	<target name="init-properties">
+		<property name="artifact.name" value="${ant.project.name}" />
+
+		<property name="build.dir" location="${ats.root}/build" />
+		<property name="build.classes" location="${build.dir}/classes" />
+		<property name="build.test" location="${build.dir}/test" />
+		<property name="build.integration" location="${build.dir}/integration" />
+
+		<property name="dist.dir" location="${ats.root}/dist" />
+		<property name="classpath" location="${lib.dir}" />
+
+		<property name="testng.output.dir" location="test-output"/>
+		<property name="cobertura.dir" location="cobertura" />
+		<property name="instrumented.dir" location="${cobertura.dir}/instrumented" />
+
+		<property name="main-class" value="com.nvarghese.ats.AtsMain" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+		 target: init 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="init" depends="init-properties">
+
+		<tstamp>
+			<format pattern="d-MMMM-yyyy" property="TODAY_IN" locale="en,IN" />
+			<format property="now" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${build.test}" />
+		<mkdir dir="${build.integration}"/>
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${lib.dir}" />
+		<mkdir dir="${ivy.lib.dir}" />
+
+		<condition property="ivy.jar.exists">
+			<available file="${ivy.lib.dir}/ivy-${ivy.version}.jar" />
+		</condition>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-download 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="ivy-download" unless="ivy.jar.exists" depends="init">
+		<!--<delete dir="${lib.dir}" includes="ivy-*.jar" excludes="ivy-${ivy.version}.jar"/> -->
+		<get src="${ivy.url}/${ivy.version}/ivy-${ivy.version}.jar" dest="${ivy.lib.dir}/ivy-${ivy.version}.jar" usetimestamp="true" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-taskdef 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="ivy-taskdef" unless="ivy.initialized">
+		<path id="ivy.lib.dir.id">
+			<fileset dir="${ivy.lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.dir.id" />
+		<property name="ivy.initialized" value="true" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-tasks-resolve 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="ivy-tasks-resolve" depends="ivy-tasks-configure">
+		<ivy:resolve file="${ats.root}/ivy.xml" settingsref="${ant.project.name}" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-tasks-retrieve 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="ivy-tasks-retrieve" depends="ivy-tasks-resolve">
+		<ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" settingsRef="${ant.project.name}" conf="default" />
+	</target>
+
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-tasks-configure 
+	 - - - - - - - - - - - - - - - - - -->
+	<target name="ivy-tasks-configure" depends="ivy-download, ivy-taskdef">
+		<ivy:settings id="${ant.project.name}" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: ivy-tasks-retrieve-tests 
+	 - - - - - - - - - - - - - - - - - -->
+
+	<target name="ivy-tasks-retrieve-tests" depends="ivy-tasks-resolve">
+		<ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]" settingsRef="${ant.project.name}" conf="*" />
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: prepare-compile 
+	 - - - - - - - - - - - - - - - - - -->
+	<target name="prepare-compile">
+		<path id="java.compile.classpath">
+			<pathelement location="${build.classes}" />
+			<fileset dir="${lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: compile-module 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="compile-module" depends="init, ivy-tasks-configure, 
+		ivy-tasks-resolve, ivy-tasks-retrieve, prepare-compile">
+
+		<javac debug="true" srcdir="${src.dir}" destdir="${build.classes}" encoding="ISO-8859-1" includeantruntime="false">
+			<classpath refid="java.compile.classpath" />
+		</javac>
+	</target>
+
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: jar 
+	 - - - - - - - - - - - - - - - - - -->
+	<target name="jar" depends="clean, compile-module, prepare-buildjar" unless="jar.created" description="--> Create jar">
+		<echo message="Building Jar for ${artifact.name}" />
+		<manifestclasspath property="jar.classpath.final" jarfile="${dist.dir}/${artifact.name}.jar">
+			<classpath>
+				<path refid="jar.classpath" />
+			</classpath>
+		</manifestclasspath>
+		<jar destfile="${dist.dir}/${artifact.name}.jar" basedir="${build.classes}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Class-Path" value="${jar.classpath.final}" />
+				<attribute name="Build-Date" value="${TODAY}" />
+			</manifest>
+			<fileset dir="${src.resources.dir}" />
+		</jar>
+		<property name="jar.created" value="true" />
+	</target>
+
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: prepare-buildjar 
+	- - - - - - - - - - - - - - - - - -->
+	<target name="prepare-buildjar">
+		<path id="jar.classpath">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+	</target>
+
+	<target name="prepare-compile-tests">
+		<path id="lib.dir.id">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+
+		<path id="test.compile.classpath">
+			<pathelement location="${build.classes}" />
+			<path refid="lib.dir.id" />
+		</path>
+
+		<path id="testng.classpath">
+			<pathelement location="${build.classes}" />
+			<pathelement location="${build.test}" />
+			<pathelement location="${build.integration}" />
+		</path>
+
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+		          target: compile-test       
+	- - - - - - - - - - - - - - - - - -->
+	<target name="compile-test" depends="compile-module,ivy-tasks-configure, 
+		ivy-tasks-resolve, ivy-tasks-retrieve-tests , prepare-compile-tests">
+
+		<javac srcdir="${test.dir}" destdir="${build.test}" encoding="ISO-8859-1" includeantruntime="false">
+			<classpath refid="test.compile.classpath" />
+		</javac>
+		<javac srcdir="${integration.dir}" destdir="${build.integration}" encoding="ISO-8859-1" includeantruntime="false">
+			<classpath refid="test.compile.classpath" />
+		</javac>
+	</target>
+
+
+	<!-- - - - - - - - - - - - - - - - - - 
+		          target: run-testngsuite       
+		     - - - - - - - - - - - - - - - - - -->
+
+	<target name="run-testngsuite" depends="compile-test" description="--> Runs tests using testng suite">
+		
+		<echo message="Running test cases" />
+
+		<path id="lib.dir.id">
+			<fileset dir="${ats.root}/lib">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+
+		<path id="testng.classpath">
+			<pathelement location="${ats.root}/build/classes" />
+			<pathelement location="${ats.root}/build/test" />
+			<pathelement location="${ats.root}/build/integration" />
+
+			<!-- resources -->
+			<pathelement location="${ats.root}/${src.resources.dir}" />
+			<pathelement location="${ats.root}/${test.resources.dir}" />
+			<pathelement location="${ats.root}/${integration.resources.dir}" />
+
+		</path>
+
+		<taskdef name="testng" classpathref="lib.dir.id" classname="org.testng.TestNGAntTask" />
+
+		<testng verbose="5" outputdir="${testng.output.dir}" classpathref="lib.dir.id" haltOnfailure="true">
+
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.dir}/cobertura.ser" />
+
+			<classpath location="${instrumented.dir}" />
+
+			<classpath>
+				<path refid="testng.classpath" />
+			</classpath>
+
+			<xmlfileset includes="testng.xml" dir="${ats.root}" />
+
+		</testng>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+		          target: run-cobertura-instrument       
+	- - - - - - - - - - - - - - - - - -->
+
+	<target name="run-cobertura-instrument" depends="compile-module">
+
+		<echo message="Running cobertura instrument" />
+		<path id="lib.ivy.id">
+			<fileset dir="${ivy.lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+		<mkdir dir="${instrumented.dir}" />
+		<taskdef resource="tasks.properties" classpathref="lib.ivy.id" />
+		<cobertura-instrument datafile="${cobertura.dir}/cobertura.ser" todir="${instrumented.dir}">
+			<fileset dir="${build.classes}">
+				<include name="**/*.class" />
+			</fileset>
+		</cobertura-instrument>
+
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	          target: run-cobertura-report           
+	- - - - - - - - - - - - - - - - - -->
+
+	<target name="run-cobertura-report" depends="run-cobertura-instrument, run-testngsuite">
+		<cobertura-report format="xml" datafile="${cobertura.dir}/cobertura.ser" destdir="${cobertura.dir}/coverage">
+			<fileset dir="${ats.root}/${src.dir}">
+				<include name="**/*.java" />
+			</fileset>
+		</cobertura-report>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+	 target: clean           
+	- - - - - - - - - - - - - - - - - -->
+	<target name="clean" depends="init-properties" description="--> Cleans all">
+		<delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+		<delete dir="${lib.dir}" />
+		<delete dir="${testng.output.dir}" />
+		<delete dir="${cobertura.dir}" />
+	</target>
+
+</project>

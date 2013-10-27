@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.nvarghese.ats.command.DisplayCommand;
+import com.nvarghese.ats.contraint.AtsContraint;
+import com.nvarghese.ats.contraint.ConstraintStatus;
 import com.nvarghese.ats.dao.FlightDAO;
 import com.nvarghese.ats.dao.RunwayDAO;
 import com.nvarghese.ats.dao.TerminalDAO;
@@ -16,6 +18,7 @@ import com.nvarghese.ats.domain.Runway;
 import com.nvarghese.ats.domain.Runway.Slot;
 import com.nvarghese.ats.domain.Terminal;
 import com.nvarghese.ats.domain.TerminalSlot;
+import com.nvarghese.ats.ds.DataStore;
 import com.nvarghese.ats.factory.FlightFactory;
 import com.nvarghese.ats.factory.RunwayFactory;
 import com.nvarghese.ats.factory.TerminalFactory;
@@ -77,7 +80,44 @@ public class AtsManager {
 			}
 		}
 
+		boolean reassigned = true;
+		while(reassigned) {
+			reassigned = reassignArrivalFlightsInQueue();
+		}	
+
 		this.currentTime = nextSlabTime;
+	}
+
+	private boolean reassignArrivalFlightsInQueue() {
+
+		boolean reassigned = false;
+		if (DataStore.getInstance().getUnassignedArrivalMap().size() > 0) {
+			int resMins = DataStore.getInstance().getUnassignedArrivalMap().firstKey();
+			Flight flight = DataStore.getInstance().getUnassignedArrivalMap().get(resMins);
+			Time arrivalTime = TimeUtils.getTime(resMins);
+			Time arrivalEndTime = TimeUtils.addTime(arrivalTime, 5);
+			AtsContraint constraint = new AtsContraint();
+			ConstraintStatus status = constraint.checkContraintsForArrival(arrivalTime, arrivalEndTime);
+			if (status == ConstraintStatus.PASSED) {
+
+				Runway runway = RunwayDAO.getAnyFreeRunway(arrivalTime, arrivalEndTime);
+				flight.setRunwayUniqueId(runway.getUniqueId());
+
+				TerminalSlot terminalSlot = TerminalSlotDAO.getFreeTerminalSlot();
+				terminalSlot.setFlightUniqueId(flight.getUniqueId());
+				flight.setTerminalSlotUniqueId(terminalSlot.getSlotUniqueId());
+
+				runway.addFlightToArrive(flight);
+				FlightDAO.save(flight);
+				DataStore.getInstance().getUnassignedArrivalMap().remove(resMins);
+				
+				DisplayCommand.displayArrivalStatus(flight, terminalSlot.getSlotUniqueId(), runway.getUniqueId(), true);
+
+				reassigned = true;
+			}
+		}
+		return reassigned;
+
 	}
 
 	private void initializeRunways() {

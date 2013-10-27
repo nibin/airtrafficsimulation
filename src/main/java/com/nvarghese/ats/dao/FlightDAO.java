@@ -9,6 +9,7 @@ import java.util.Set;
 import com.nvarghese.ats.domain.Flight;
 import com.nvarghese.ats.ds.DataStore;
 import com.nvarghese.ats.type.Time;
+import com.nvarghese.ats.utils.TimeUtils;
 
 public class FlightDAO {
 
@@ -61,22 +62,22 @@ public class FlightDAO {
 
 	}
 
-	public static List<Flight> getAllFlightReadyForDeparture(Time startTime, Time endTime) {
+	public static List<Flight> getAllFlightsReadyForDeparture(Time startTime, Time endTime) {
 
 		NavigableMap<Integer, HashSet<Integer>> selectedFlights = DataStore.getInstance().getDepartureTreeMap()
 				.subMap(startTime.getResolvedMins(), true, endTime.getResolvedMins(), true);
 
 		HashSet<Integer> flightIds = new HashSet<Integer>();
-		for(HashSet<Integer> s: selectedFlights.values()) {
+		for (HashSet<Integer> s : selectedFlights.values()) {
 			flightIds.addAll(s);
 		}
-		
+
 		List<Flight> flights = getFlights(flightIds);
 		return flights;
 
 	}
 
-	public static List<Flight> getAllFlightReadyForDeparture(String location) {
+	public static List<Flight> getAllFlightsReadyForDeparture(String location) {
 
 		List<Flight> flights = new ArrayList<Flight>();
 
@@ -102,17 +103,35 @@ public class FlightDAO {
 
 	}
 
-	public static List<Flight> getAllFlightReadyForDeparture(Time startTime, Time endTime, String location) {
-		
+	public static Time getProbableTerminalSlotFreeTime(Time startTime) {
+
+		boolean found = false;
+		Time tempStart = startTime;
+		while (!found) {
+			int len = DataStore.getInstance().getDepartureTreeMap()
+					.subMap(tempStart.getResolvedMins(), true, TimeUtils.addTime(tempStart, 5).getResolvedMins(), true)
+					.values().size();
+			found = (len > 0) ? true : false;
+			if (!found) {
+				tempStart = TimeUtils.addTime(tempStart, 5);
+			}
+		}
+
+		return TimeUtils.addTime(tempStart, 5);
+
+	}
+
+	public static List<Flight> getAllFlightsReadyForDeparture(Time startTime, Time endTime, String location) {
+
 		NavigableMap<Integer, HashSet<Integer>> flightsTimeBased = DataStore.getInstance().getDepartureTreeMap()
 				.subMap(startTime.getResolvedMins(), true, endTime.getResolvedMins(), true);
 
 		HashSet<Integer> flightLocBasedSet = DataStore.getInstance().getDepartureDestinationMap().get(location);
-		
+
 		HashSet<Integer> flightTimeBasedSet = new HashSet<Integer>();
-		for(HashSet<Integer> s: flightsTimeBased.values()) {
+		for (HashSet<Integer> s : flightsTimeBased.values()) {
 			flightTimeBasedSet.addAll(s);
-		}		
+		}
 
 		HashSet<Integer> targetSet = new HashSet<Integer>();
 		if (flightsTimeBased.size() > 0 && flightLocBasedSet != null) {
@@ -124,6 +143,37 @@ public class FlightDAO {
 
 		return flights;
 
+	}
+
+	public static void addToUnassignedArrivalQueue(Flight flight) {
+
+		if (!isFlightInUnassignedQueue(flight.getArrivalTime())) {
+			DataStore.getInstance().getUnassignedArrivalMap().put(flight.getArrivalTime().getResolvedMins(), flight);
+		} else {
+			boolean found = true;
+			Time nTime = flight.getArrivalTime();
+			while (found) {
+				nTime = TimeUtils.addTime(nTime, 5);
+				found = isFlightInUnassignedQueue(nTime);
+			}
+			flight.setArrivalTime(nTime);
+			DataStore.getInstance().getUnassignedArrivalMap().put(flight.getArrivalTime().getResolvedMins(), flight);
+
+		}
+
+	}
+
+	public static boolean isFlightInUnassignedQueue(Time time) {
+
+		int len = DataStore.getInstance().getUnassignedArrivalMap()
+				.subMap(time.getResolvedMins(), true, TimeUtils.addTime(time, 5).getResolvedMins(), false).values()
+				.size();
+
+		if (len > 0) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public static void delete(int flightUniqueId) {

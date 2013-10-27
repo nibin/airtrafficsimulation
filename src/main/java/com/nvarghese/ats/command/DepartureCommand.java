@@ -70,7 +70,7 @@ public class DepartureCommand {
 
 	private void processOtherFlightsToDepart(Time startTime, Time endTime) {
 
-		List<Flight> flights = FlightDAO.getAllFlightReadyForDeparture(startTime, endTime);
+		List<Flight> flights = FlightDAO.getAllFlightsReadyForDeparture(startTime, endTime);
 		AtsContraint contraint = new AtsContraint();
 		for (Flight flight : flights) {
 			ConstraintStatus status = contraint.checkContraintsForDepart(startTime, endTime);

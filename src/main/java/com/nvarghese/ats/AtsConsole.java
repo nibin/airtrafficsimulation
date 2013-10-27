@@ -3,6 +3,9 @@ package com.nvarghese.ats;
 import java.util.List;
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nvarghese.ats.command.ArrivalCommand;
 import com.nvarghese.ats.command.DepartureCommand;
 import com.nvarghese.ats.command.DisplayCommand;
@@ -23,6 +26,8 @@ public class AtsConsole {
 
 	private static final String HELP_KEY = "h";
 	private static final String LIST_KEY = "l";
+	
+	static Logger logger = LoggerFactory.getLogger(AtsConsole.class);
 
 	public AtsConsole() {
 
@@ -46,7 +51,7 @@ public class AtsConsole {
 			int command = Integer.parseInt(scanner.nextLine());
 			processCommand(command, scanner);
 		} catch (Exception e) {
-
+			logger.error("Failed to run the command. Reason: {}", e.getMessage());
 		}
 
 	}
@@ -116,7 +121,7 @@ public class AtsConsole {
 
 		if (commandStr.equalsIgnoreCase(LIST_KEY)) {
 			System.out.println(" [?] Available flights for departure are: ");
-			List<Flight> flights = FlightDAO.getAllFlightReadyForDeparture(Time.airportStartTime(),
+			List<Flight> flights = FlightDAO.getAllFlightsReadyForDeparture(Time.airportStartTime(),
 					Time.airportShutdownTime());
 			DisplayCommand.displayFlights(flights);
 			System.out.print(" Press any key to continue departure operation: ");

@@ -18,8 +18,10 @@ public class DataStore {
 
 	private final Map<String, HashSet<Integer>> departureDestinationMap = new HashMap<String, HashSet<Integer>>();
 	private final TreeMap<Integer, HashSet<Integer>> departureTreeMap = new TreeMap<Integer, HashSet<Integer>>();
-	
+
 	private final Map<Integer, Runway> runwayMap = new HashMap<Integer, Runway>();
+
+	private final TreeMap<Integer, Flight> unassignedArrivalMap = new TreeMap<Integer, Flight>();
 
 	private static final DataStore instance = new DataStore();
 
@@ -58,10 +60,15 @@ public class DataStore {
 		return departureDestinationMap;
 	}
 
-	
 	public Map<Integer, Runway> getRunwayMap() {
-	
+
 		return runwayMap;
+	}
+
+	
+	public TreeMap<Integer, Flight> getUnassignedArrivalMap() {
+	
+		return unassignedArrivalMap;
 	}
 
 }

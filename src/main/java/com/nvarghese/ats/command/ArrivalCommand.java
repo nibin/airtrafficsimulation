@@ -38,7 +38,7 @@ public class ArrivalCommand {
 				if (uniqueId > FlightFactory.flightNumberTracker && arrivalTime != null && originLoc != Location.NONE
 						&& originLoc != AtsMain.BASE_AIRPORT_LOCATION) {
 					Time depTime = TimeUtils.subtractTime(arrivalTime, 100);
-					Flight flight = FlightFactory.createFlight(originLoc, AtsMain.BASE_AIRPORT_LOCATION, depTime,
+					Flight flight = FlightFactory.createFlight(uniqueId, originLoc, AtsMain.BASE_AIRPORT_LOCATION, depTime,
 							arrivalTime, false, true);
 					this.flight = flight;
 					isParsable = true;
@@ -70,10 +70,18 @@ public class ArrivalCommand {
 			runway.addFlightToArrive(flight);
 			FlightDAO.save(flight);
 			
+			DisplayCommand.displayArrivalStatus(flight, terminalSlot.getSlotUniqueId(), runway.getUniqueId(), true);
 			AtsManager.getInstance().processRunways();
 			
-		} else if (status == ConstraintStatus.NO_PARKING_SLOT_AVAILABLE) {
+		} else if (status == ConstraintStatus.NO_PARKING_SLOT_AVAILABLE 
+				|| status == ConstraintStatus.NO_RUNWAY_AVAILABLE) {
 			
+			Time tentativeArrivalTime = contraint.findProbableTerminalSlotFreeTime(flight.getArrivalTime());
+			if(tentativeArrivalTime != null) {
+				flight.setArrivalTime(tentativeArrivalTime);
+				FlightDAO.addToUnassignedArrivalQueue(flight);
+				DisplayCommand.displayArrivalStatus(flight, 0, 0, false);
+			}
 			
 		}
 		

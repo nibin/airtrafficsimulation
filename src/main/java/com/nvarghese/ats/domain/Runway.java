@@ -138,7 +138,7 @@ public class Runway {
 	public List<Slot> getSlots(Time startTime, Time endTime) {
 
 		List<Slot> slots = new ArrayList<Slot>(timeSlotMap.subMap(startTime.getResolvedMins(), true,
-				endTime.getResolvedMins(), true).values());
+				endTime.getResolvedMins(), false).values());
 
 		Collections.sort(slots, new Comparator<Slot>() {
 
@@ -177,11 +177,13 @@ public class Runway {
 		Flight flight = FlightDAO.getFlight(slot.flightUniqueId);
 		if (slot.runwayMode == RunwayMode.DEPARTURE) {
 			System.out.println("Flight " + flight.getUniqueId() + " is about to take off to " + flight.getDestination()
-					+ " via runway" + this.uniqueId);
+					+ " via runway" + this.uniqueId + " at " + flight.getDepartureTime().getFormattedTime());
+			flight.setDeparted(true);
 			FlightDAO.delete(slot.flightUniqueId);
 		} else if (slot.runwayMode == RunwayMode.ARRIVAL) {
 			System.out.println("Flight " + flight.getUniqueId() + " is about to arrive from " + flight.getOrigin()
-					+ " via runway" + this.uniqueId);
+					+ " via runway" + this.uniqueId + " at " + flight.getArrivalTime().getFormattedTime());
+			flight.setArrived(true);
 			
 		}
 	}

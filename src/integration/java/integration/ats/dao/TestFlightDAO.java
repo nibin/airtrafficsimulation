@@ -65,9 +65,9 @@ public class TestFlightDAO {
 	@Test
 	public void testGetAllFlightReadyForDeparture() {
 
-		Assert.assertEquals(5, FlightDAO.getAllFlightReadyForDeparture(new Time(5, 15), new Time(6, 15)).size());
+		Assert.assertEquals(5, FlightDAO.getAllFlightsReadyForDeparture(new Time(5, 15), new Time(6, 15)).size());
 
-		Assert.assertEquals(4, FlightDAO.getAllFlightReadyForDeparture(new Time(5, 20), new Time(6, 15)).size());
+		Assert.assertEquals(4, FlightDAO.getAllFlightsReadyForDeparture(new Time(5, 20), new Time(6, 15)).size());
 
 	}
 

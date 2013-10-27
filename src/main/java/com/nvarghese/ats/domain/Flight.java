@@ -17,11 +17,15 @@ public class Flight {
 	private int terminalSlotUniqueId;
 	private int runwayUniqueId;
 	private boolean departing;
+	private boolean departed;
 	private boolean arriving;
+	private boolean arrived;
 
 	public Flight() {
 
 		super();
+		this.departed = false;
+		this.arrived = false;
 	}
 
 	public int getUniqueId() {
@@ -124,16 +128,34 @@ public class Flight {
 		this.arriving = arriving;
 	}
 
-	
 	public int getRunwayUniqueId() {
-	
+
 		return runwayUniqueId;
 	}
 
-	
 	public void setRunwayUniqueId(int runwayUniqueId) {
-	
+
 		this.runwayUniqueId = runwayUniqueId;
+	}
+
+	public boolean isDeparted() {
+
+		return departed;
+	}
+
+	public boolean isArrived() {
+
+		return arrived;
+	}
+
+	public void setDeparted(boolean departed) {
+
+		this.departed = departed;
+	}
+
+	public void setArrived(boolean arrived) {
+
+		this.arrived = arrived;
 	}
 
 }

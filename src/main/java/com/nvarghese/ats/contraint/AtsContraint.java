@@ -1,10 +1,16 @@
 package com.nvarghese.ats.contraint;
 
+import java.util.List;
+
+import com.nvarghese.ats.dao.FlightDAO;
 import com.nvarghese.ats.dao.RunwayDAO;
 import com.nvarghese.ats.dao.TerminalSlotDAO;
+import com.nvarghese.ats.domain.Flight;
 import com.nvarghese.ats.domain.Runway;
 import com.nvarghese.ats.domain.TerminalSlot;
+import com.nvarghese.ats.ds.DataStore;
 import com.nvarghese.ats.type.Time;
+import com.nvarghese.ats.utils.TimeUtils;
 
 public class AtsContraint {
 
@@ -34,6 +40,20 @@ public class AtsContraint {
 		} else {
 			return ConstraintStatus.UNKNOWN;
 		}
+	}
+	
+	public Time findProbableTerminalSlotFreeTime(Time currentTime) {
+		
+		Time tentativeTime = FlightDAO.getProbableTerminalSlotFreeTime(currentTime);
+		
+		if(tentativeTime.getResolvedMins() < Time.airportShutdownTime().getResolvedMins()
+				&& tentativeTime.getResolvedMins() > Time.airportStartTime().getResolvedMins()) {
+			return tentativeTime;
+		} else {
+			return null;
+		}
+		
+		
 	}
 
 }

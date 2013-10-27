@@ -62,11 +62,11 @@ public class SearchCommand {
 	public List<Flight> runCommand() {
 
 		if (mode == RANGE_MODE_ONLY) {
-			return FlightDAO.getAllFlightReadyForDeparture(this.startTime, this.endTime);
+			return FlightDAO.getAllFlightsReadyForDeparture(this.startTime, this.endTime);
 		} else if (mode == DESTINATION_MODE_ONLY) {
-			return FlightDAO.getAllFlightReadyForDeparture(this.destination);
+			return FlightDAO.getAllFlightsReadyForDeparture(this.destination);
 		} else if (mode == RANGE_DEST_MODE) {
-			return FlightDAO.getAllFlightReadyForDeparture(this.startTime, this.endTime, this.destination);
+			return FlightDAO.getAllFlightsReadyForDeparture(this.startTime, this.endTime, this.destination);
 		} else {
 			logger.warn("Unknown search mode detected");
 			return null;
