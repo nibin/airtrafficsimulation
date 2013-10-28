@@ -20,14 +20,12 @@ import com.nvarghese.ats.utils.TimeUtils;
 
 public class ArrivalCommand {
 	
-	private Flight flight;
-	
 	static Logger logger = LoggerFactory.getLogger(ArrivalCommand.class);
-	
 
-	public boolean parseFlightDetails(String commandStr) {
+	public Flight parseFlightDetails(String commandStr) {
 
 		boolean isParsable = false;
+		Flight flight = null;
 		String[] splits = commandStr.split(",");
 		try {
 			if (splits.length == 3) {
@@ -38,21 +36,21 @@ public class ArrivalCommand {
 				if (uniqueId > FlightFactory.flightNumberTracker && arrivalTime != null && originLoc != Location.NONE
 						&& originLoc != AtsMain.BASE_AIRPORT_LOCATION) {
 					Time depTime = TimeUtils.subtractTime(arrivalTime, 100);
-					Flight flight = FlightFactory.createFlight(uniqueId, originLoc, AtsMain.BASE_AIRPORT_LOCATION, depTime,
+					flight = FlightFactory.createFlight(uniqueId, originLoc, AtsMain.BASE_AIRPORT_LOCATION, depTime,
 							arrivalTime, false, true);
-					this.flight = flight;
 					isParsable = true;
 				}
 			}
 		} catch (Exception e) {
 			logger.error("Failed to parse arrival command string. Reason: {}", e.getMessage(), e);
+			flight = null;
 		}
 
-		return isParsable;
+		return flight;
 	}
 
 
-	public void processFlightForArrival() {
+	public void processFlightForArrival(Flight flight) {
 		
 		Time arrivalStartTime = flight.getArrivalTime();
 		Time arrivalEndTime = TimeUtils.addTime(arrivalStartTime, 5);
@@ -64,7 +62,7 @@ public class ArrivalCommand {
 			flight.setRunwayUniqueId(runway.getUniqueId());
 			
 			TerminalSlot terminalSlot = TerminalSlotDAO.getFreeTerminalSlot();
-			terminalSlot.setFlightUniqueId(this.flight.getUniqueId());
+			terminalSlot.setFlightUniqueId(flight.getUniqueId());
 			flight.setTerminalSlotUniqueId(terminalSlot.getSlotUniqueId());
 			
 			runway.addFlightToArrive(flight);
@@ -83,8 +81,12 @@ public class ArrivalCommand {
 				DisplayCommand.displayArrivalStatus(flight, 0, 0, false);
 			}
 			
-		}
+		}		
+	}
+	
+	public void processFlightsForArrival(Flight[] flights) {
 		
-		
+		for(Flight flight: flights)
+			processFlightForArrival(flight);		
 	}
 }

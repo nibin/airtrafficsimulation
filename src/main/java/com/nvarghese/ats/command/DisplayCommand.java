@@ -13,16 +13,20 @@ public class DisplayCommand {
 
 	public static void displayFlights(List<Flight> flights) {
 
-		System.out.println("FlightID\tAirline\tDestination\tDeparture Time\tTerminal(Slot)\n");
+		System.out.println("FlightID\tAirline\tOrigin\tDestination\tArrival Time\tDeparture Time\tTerminal(Slot)\tDeparting?\tArrived?\n");
 		for (Flight flight : flights) {
 			StringBuffer buf = new StringBuffer();
 			buf.append(flight.getUniqueId() + "\t");
 			buf.append(flight.getAirline() + "\t");
+			buf.append(flight.getOrigin().getSimpleName() + "\t");
 			buf.append(flight.getDestination().getSimpleName() + "\t");
+			buf.append(flight.getArrivalTime().getFormattedTime() + "\t");
 			buf.append(flight.getDepartureTime().getFormattedTime() + "\t");
 
 			TerminalSlot slot = TerminalSlotDAO.getTerminalSlot(flight.getTerminalSlotUniqueId());
 			buf.append(slot.getTerminalId() + "(" + slot.getSlotId() + ")" + "\t");
+			buf.append(flight.isDeparting() + "\t");
+			buf.append(flight.isArrived() + "\t");
 			System.out.println(buf.toString());
 		}
 	}

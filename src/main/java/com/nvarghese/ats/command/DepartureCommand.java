@@ -16,16 +16,11 @@ import com.nvarghese.ats.utils.TimeUtils;
 
 public class DepartureCommand {
 
-	private int flightUniqueId;
-
 	public DepartureCommand() {
 
-		this.flightUniqueId = 0;
 	}
 
 	public boolean processFlightForDeparture(int flightUniqueId) {
-
-		this.flightUniqueId = flightUniqueId;
 
 		boolean isFlightDepartOperationCompleted = false;
 		Flight flight = FlightDAO.getFlight(flightUniqueId);
@@ -51,7 +46,7 @@ public class DepartureCommand {
 
 				runway.addFlightToDepart(flight);
 
-				processOtherFlightsToDepart(currentTime, expectedTime);
+				processFlightsToDepart(currentTime, expectedTime);
 				FlightDAO.save(flight);
 
 				DisplayCommand.displayDepartureStatus(flight.getUniqueId(), freedTerminalSlotId, runway.getUniqueId());
@@ -68,9 +63,9 @@ public class DepartureCommand {
 		return isFlightDepartOperationCompleted;
 	}
 
-	private void processOtherFlightsToDepart(Time startTime, Time endTime) {
+	public void processFlightsToDepart(Time startTime, Time endTime) {
 
-		List<Flight> flights = FlightDAO.getAllFlightsReadyForDeparture(startTime, endTime);
+		List<Flight> flights = FlightDAO.getAllFlightsReadyForDeparture(startTime, endTime, false);
 		AtsContraint contraint = new AtsContraint();
 		for (Flight flight : flights) {
 			ConstraintStatus status = contraint.checkContraintsForDepart(startTime, endTime);

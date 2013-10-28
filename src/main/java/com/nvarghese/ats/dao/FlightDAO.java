@@ -76,6 +76,20 @@ public class FlightDAO {
 		return flights;
 
 	}
+	
+	public static List<Flight> getAllFlightsReadyForDeparture(Time startTime, Time endTime, boolean tailInclusive) {
+		
+		NavigableMap<Integer, HashSet<Integer>> selectedFlights = DataStore.getInstance().getDepartureTreeMap()
+				.subMap(startTime.getResolvedMins(), true, endTime.getResolvedMins(), tailInclusive);
+
+		HashSet<Integer> flightIds = new HashSet<Integer>();
+		for (HashSet<Integer> s : selectedFlights.values()) {
+			flightIds.addAll(s);
+		}
+
+		List<Flight> flights = getFlights(flightIds);
+		return flights;
+	}
 
 	public static List<Flight> getAllFlightsReadyForDeparture(String location) {
 
@@ -112,8 +126,11 @@ public class FlightDAO {
 					.subMap(tempStart.getResolvedMins(), true, TimeUtils.addTime(tempStart, 5).getResolvedMins(), true)
 					.values().size();
 			found = (len > 0) ? true : false;
-			if (!found) {
+			if (!found && tempStart.getResolvedMins() < Time.airportShutdownTime().getResolvedMins()) {
 				tempStart = TimeUtils.addTime(tempStart, 5);
+			} else {
+				tempStart = startTime;
+				break;
 			}
 		}
 

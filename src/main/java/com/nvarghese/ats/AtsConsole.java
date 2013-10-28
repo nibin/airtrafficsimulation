@@ -1,6 +1,7 @@
 package com.nvarghese.ats;
 
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import com.nvarghese.ats.domain.Flight;
 import com.nvarghese.ats.factory.FlightFactory;
 import com.nvarghese.ats.params.Location;
 import com.nvarghese.ats.type.Time;
+import com.nvarghese.ats.utils.TimeUtils;
 
 public class AtsConsole {
 
@@ -26,7 +28,7 @@ public class AtsConsole {
 
 	private static final String HELP_KEY = "h";
 	private static final String LIST_KEY = "l";
-	
+
 	static Logger logger = LoggerFactory.getLogger(AtsConsole.class);
 
 	public AtsConsole() {
@@ -68,49 +70,103 @@ public class AtsConsole {
 			case ARRIVAL_OP:
 				processArrivalOperation(scanner);
 				break;
+			case RUN_AIRPORT_OP:
+				processRunAirportOperation(scanner);
+				break;
 			case EXIT_OP:
 				System.out.println("GoodBye!");
+				scanner.close();
 				System.exit(0);
 
 		}
 
-		// TODO Auto-generated method stub
+	}
+
+	private void processRunAirportOperation(Scanner scanner) {
+
+		System.out.println("[*] User selected Run Airport operation (press 'h' for help):");
+		String commandStr = scanner.nextLine();
+		if (commandStr.equalsIgnoreCase(HELP_KEY)) {
+
+			System.out.println(" [?] Allowed options are: ");
+			System.out.println("     (a) Run Airport operation by fast forwarding time (HH:MM): ");
+			System.out.println("     (b) Add random number of arrival flight: ");
+			System.out.println("     (c) See airport status");
+			System.out.println("     (d) Go back to main menu");
+			System.out.println("     For eg: 41, Chicago, 06:10");
+			System.out.print(" Select a mode to continue (a) or (b) or (c) or (d): ");
+
+			String selectedMode = scanner.nextLine();
+			switch (selectedMode) {
+				case "a":
+					System.out.print("   Please enter the fast forwarded airport time (> "
+							+ AtsManager.getInstance().getCurrentTime().getFormattedTime() + ")");
+					String nTimeStr = scanner.nextLine();
+					Time newTime = TimeUtils.parseTime(nTimeStr);
+					if (newTime.getResolvedMins() > AtsManager.getInstance().getCurrentTime().getResolvedMins()) {
+						AtsManager.getInstance().fastForwardRunwayProcessing(newTime);
+					} else {
+						System.out.println(" [-] Selected time is less than airport time of "
+								+ AtsManager.getInstance().getCurrentTime().getFormattedTime());
+						processRunAirportOperation(scanner);
+					}
+					break;
+				case "b":
+					System.out.print("   Please enter the random number of arrival flights: ");
+					int newArrivalFlightCount = Integer.parseInt(scanner.nextLine());
+					Flight[] flights = createRandomFlightForArrival(newArrivalFlightCount);
+					ArrivalCommand arrivalCommand = new ArrivalCommand();
+					arrivalCommand.processFlightsForArrival(flights);
+					processRunAirportOperation(scanner);
+					break;
+				case "c":
+					List<Flight> fls = FlightDAO.getAllFlights();
+					DisplayCommand.displayFlights(fls);
+					processRunAirportOperation(scanner);
+					break;
+				case "d":
+					System.out.print("   Press any key to go back to main menu: ");
+					scanner.nextLine();
+			}
+
+		}
 
 	}
 
 	private void processArrivalOperation(Scanner scanner) {
-		
+
 		System.out.println("[*] User selected Arrival operation");
-		System.out.print(" Please enter the arriving flight details (press 'h' for help): ");		
+		System.out.print(" Please enter the arriving flight details (press 'h' for help): ");
 		String commandStr = scanner.nextLine();
-		
+
 		if (commandStr.equalsIgnoreCase(HELP_KEY)) {
 			Location[] locs = Location.getFilteredLocations(AtsMain.BASE_AIRPORT_LOCATION);
 			String locStrings = "";
-			for(Location loc: locs) {
-				if(loc!= Location.NONE)
+			for (Location loc : locs) {
+				if (loc != Location.NONE)
 					locStrings += loc.getSimpleName() + ", ";
 			}
-			
-			System.out.println(" [?] Allowed format of values are (Flight Unique Id, Origin, Scheduled arrival time): ");
+
+			System.out
+					.println(" [?] Allowed format of values are (Flight Unique Id, Origin, Scheduled arrival time): ");
 			System.out.println("     (a) Flight unique id should be more than " + FlightFactory.flightNumberTracker);
-			System.out.println("     (b) Origin should be a value within the list: " + locStrings);			
-			System.out.println("     (c) Schedule arrival time should be of Format HH:MM and greater than " + AtsManager.getInstance().getCurrentTime().getFormattedTime());
+			System.out.println("     (b) Origin should be a value within the list: " + locStrings);
+			System.out.println("     (c) Schedule arrival time should be of Format HH:MM and greater than "
+					+ AtsManager.getInstance().getCurrentTime().getFormattedTime());
 			System.out.println("     For eg: 41, Chicago, 06:10");
 			System.out.print(" Press any key to continue arrival operation: ");
 			processArrivalOperation(scanner);
 		} else {
 			ArrivalCommand arrivalCommand = new ArrivalCommand();
-			boolean isParsable = arrivalCommand.parseFlightDetails(commandStr);
-			if (isParsable) {
-				arrivalCommand.processFlightForArrival();
+			Flight flight = arrivalCommand.parseFlightDetails(commandStr);
+			if (flight != null) {
+				arrivalCommand.processFlightForArrival(flight);
 			} else {
 				System.out.println(" [-] Error in arrival command. Unable to parse.");
 				processArrivalOperation(scanner);
 			}
 		}
-		
-		
+
 	}
 
 	private void processDepartureOperation(Scanner scanner) {
@@ -165,6 +221,32 @@ public class AtsConsole {
 			}
 		}
 
+	}
+
+	private Flight[] createRandomFlightForArrival(int newArrivalFlightCount) {
+
+		Flight[] flights = new Flight[newArrivalFlightCount];
+		Random random = new Random();
+
+		Location[] locs = Location.getFilteredLocations(AtsMain.BASE_AIRPORT_LOCATION);
+
+		for (int i = 0; i < newArrivalFlightCount; i++) {
+			Time depTime = TimeUtils.getTime(random
+					.nextInt(AtsManager.getInstance().getCurrentTime().getResolvedMins()));
+			int minsToShutDown = Time.airportShutdownTime().getResolvedMins()
+					- AtsManager.getInstance().getCurrentTime().getResolvedMins();
+			Time arrivalTime = TimeUtils.addTime(depTime, random.nextInt(minsToShutDown));
+			
+			while(arrivalTime.getResolvedMins() <= AtsManager.getInstance().getCurrentTime().getResolvedMins()) {
+				arrivalTime = TimeUtils.addTime(depTime, random.nextInt(minsToShutDown));
+			}
+			FlightFactory.flightNumberTracker++;
+			
+			Flight flight = FlightFactory.createFlight(FlightFactory.flightNumberTracker, locs[random.nextInt(locs.length)],
+					AtsMain.BASE_AIRPORT_LOCATION, depTime, arrivalTime, false, true);
+			flights[i] = flight;
+		}
+		return flights;
 	}
 
 }

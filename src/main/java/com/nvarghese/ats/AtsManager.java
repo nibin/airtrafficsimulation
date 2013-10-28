@@ -6,6 +6,7 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.nvarghese.ats.command.DepartureCommand;
 import com.nvarghese.ats.command.DisplayCommand;
 import com.nvarghese.ats.contraint.AtsContraint;
 import com.nvarghese.ats.contraint.ConstraintStatus;
@@ -86,6 +87,15 @@ public class AtsManager {
 		}	
 
 		this.currentTime = nextSlabTime;
+	}
+	
+	public void fastForwardRunwayProcessing(Time newTime) {
+		
+		DepartureCommand depCommand = new DepartureCommand();
+		while(this.currentTime.getResolvedMins() <= newTime.getResolvedMins()) {
+			depCommand.processFlightsToDepart(this.currentTime, TimeUtils.addTime(currentTime, 5));
+			processRunways();
+		}
 	}
 
 	private boolean reassignArrivalFlightsInQueue() {
